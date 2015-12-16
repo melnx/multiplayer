@@ -1,0 +1,225 @@
+<html>
+<head>
+
+</head>
+<body style="background-color: black;">
+    <canvas id="canvas" width="1024" height="768"></canvas>
+
+
+    <script>
+
+        //keyboard stuff
+        function Key(code){
+            this.code = code;
+        }
+        Key.prototype = {
+            down: false
+        };
+
+        function KeySet(){
+            this.up =    new Key(38);
+            this.down =  new Key(40);
+            this.left =  new Key(37);
+            this.right = new Key(39);
+            this.space = new Key(32);
+        }
+
+        var keys = new KeySet();
+
+        function getKey(code){
+            for (var key in keys){
+                if (keys.hasOwnProperty(key)){
+                    if (keys[key].code === code){
+                        return keys[key];
+                    }
+                }
+            }
+        }
+
+        // Keyboard event listeners
+        window.addEventListener('keydown', function(e){
+            var key = getKey(e.which);
+            if (key){
+                key.down = true;
+                e.preventDefault();
+            }
+        });
+        window.addEventListener('keyup', function(e){
+            // console.log('keyup', e.which);
+            var key = getKey(e.which);
+            if (key){
+                key.down = false;
+                e.preventDefault();
+            }
+        });
+
+
+        //image stuff
+        var images = {
+            drawRotatedImage: function (image, x, y, angle){
+                this.context.save();
+                this.context.translate(x, y);
+                this.context.rotate(angle * TO_RADIANS);
+                this.context.drawImage(image, -(image.width / 2), -(image.height / 2));
+                this.context.restore();
+            },
+
+            drawDot: function (x, y){
+                this.context.fillRect(x, y, 1, 1);
+            },
+
+            images:   {},
+            getImage: function (src, cb){
+                var img = this.images[src];
+                if (img && cb){
+                    cb.call(img);
+                    return img;
+                } else {
+                    img = new Image();
+                    img.onload = cb;
+                    img.src = src;
+                    this.images[src] = img;
+                    return img;
+                }
+            },
+            preload:  function (sources, cb){
+                var self = this
+                        , ln = sources.length
+                        ;
+                sources.forEach(function (src){
+                    self.getImage(src, function (){
+                        if (--ln === 0 && cb){
+                            cb.call(self, sources);
+                        }
+                    });
+                });
+            },
+
+            drawSprite: function (img, left, top, width, height, x, y, width2, height2){
+                if(width2 && height2){
+                    this.context.drawImage(img, left, top, width, height, x, y, width2, height2);
+                }else{
+                    this.context.drawImage(img, left, top, width, height, x, y, width2, height2);
+                }
+            }
+
+        };
+
+        function Sprite(img, width, height, width2, height2, x, y, positions){
+            this.img = img;
+            this.width = width;
+            this.height = height;
+            this.width2 = width2;
+            this.height2 = height2;
+            this.x = x;
+            this.y = y;
+            this.positions = positions;
+        }
+        Sprite.prototype = {
+            animate: 0,
+            frames: 0,
+            pos: 0,
+            draw: function (x, y, position){
+                if (typeof position !== 'undefined'){
+                    this.pos = position;
+                } else {
+                    if (this.animate){
+                        if (this.frames === 0){
+                            this.frames = this.animate;
+                            this.pos = this.pos === 0 ? this.positions.length-1 : this.pos -1;
+                        } else {
+                            this.frames--;
+                        }
+                    } else {
+                        this.pos = 0;
+                    }
+                }
+                if(this.positions){
+                    var pos = this.positions[this.pos];
+                    images.drawSprite(this.img, pos[0], pos[1], this.width, this.height, x, y, this.width2, this.height2);
+                }else{
+                    images.drawSprite(this.img, 0, 0, this.width, this.height, x, y, this.width2, this.height2);
+                }
+            }
+        };
+
+        var x = 0;
+        var dx = 0;
+        var dy = 0;
+
+        var mario = images.getImage("http://orig15.deviantart.net/a436/f/2012/101/1/c/mario_sprite_by_flamingdragon5000-d4vt57a.png");
+        var players = [new Sprite(mario, 480, 640, 48, 64, 20, 500)];
+
+        var bricks = [];
+
+        var brick = images.getImage("http://away3d.googlecode.com/svn/tags/2.4.2%20examples/Away3D/as/src/assets/brick.jpg");
+        for(var i=0; i<20; i++){
+            bricks.push(new Sprite(brick, 512, 512, 50, 50, i*50, 600));
+        }
+
+        var plant = images.getImage("https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTLPuu6eM4TvRkRYijqD60rgXRwQiqYkb-AV0yBGKeJdC40t8nDyw");
+        for(var i=10; i<30; i++){
+            bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, 300));
+        }
+
+
+        function logicFrame(){
+            // update players position,
+            // listen for collisions etc
+            var player = players[0];
+
+            dx = 0;
+            if(keys.left.down){
+                dx = -5;
+            }
+            if(keys.right.down){
+                dx = 5;
+            }
+            if(keys.space.down){
+                if(dy == 0){
+                    dy = -25;
+                }
+            }
+
+
+            if(player.y >= 535){
+                if( dy > 0){
+                    dy = 0;
+                }
+            }else{
+                dy += .98;
+            }
+
+            player.x+=dx;
+            player.y+=dy;
+
+            // process the game logic at a target of 60fps
+            setTimeout(logicFrame, 1000/60);
+        }
+
+        function drawFrame(){
+            // kick ass circles and squares
+            var canvas = document.getElementById('canvas'),
+                context = canvas.getContext('2d');
+
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            images.context = context;
+
+            players.forEach(function(p){
+                p.draw(p.x, p.y);
+            });
+            bricks.forEach(function(b){
+                b.draw(b.x, b.y);
+            });
+
+            window.requestAnimationFrame(drawFrame);
+        }
+
+        drawFrame();
+        logicFrame()
+    </script>
+</body>
+
+</html>
