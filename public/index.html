@@ -95,11 +95,21 @@
                 });
             },
 
-            drawSprite: function (img, left, top, width, height, x, y, width2, height2){
+            drawSprite: function (img, left, top, width, height, x, y, width2, height2, turned){
+                if(turned){
+                    //this.context.save();
+                //    this.context.translate(width2, 0);
+                  //  this.context.scale(-1, 1);
+                }
+
                 if(width2 && height2){
                     this.context.drawImage(img, left, top, width, height, x, y, width2, height2);
                 }else{
                     this.context.drawImage(img, left, top, width, height, x, y, width2, height2);
+                }
+
+                if(turned){
+                    this.context.restore();
                 }
             }
 
@@ -136,9 +146,9 @@
                 }
                 if(this.positions){
                     var pos = this.positions[this.pos];
-                    images.drawSprite(this.img, pos[0], pos[1], this.width, this.height, x, y, this.width2, this.height2);
+                    images.drawSprite(this.img, pos[0], pos[1], this.width, this.height, x, y, this.width2, this.height2, this.turned);
                 }else{
-                    images.drawSprite(this.img, 0, 0, this.width, this.height, x, y, this.width2, this.height2);
+                    images.drawSprite(this.img, 0, 0, this.width, this.height, x, y, this.width2, this.height2, this.turned);
                 }
             }
         };
@@ -148,7 +158,7 @@
         var dy = 0;
 
         var mario = images.getImage("http://orig15.deviantart.net/a436/f/2012/101/1/c/mario_sprite_by_flamingdragon5000-d4vt57a.png");
-        var players = [new Sprite(mario, 480, 640, 48, 64, 20, 500)];
+        var players = [new Sprite(mario, 480, 640, 48, 64, 20, 300)];
 
         var bricks = [];
 
@@ -158,10 +168,12 @@
         }
 
         var plant = images.getImage("https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTLPuu6eM4TvRkRYijqD60rgXRwQiqYkb-AV0yBGKeJdC40t8nDyw");
-        for(var i=10; i<30; i++){
+        for(var i=12; i<30; i++){
             bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, 300));
         }
 
+        var tree = images.getImage("http://orig08.deviantart.net/e55b/f/2012/146/c/0/c0a5a29fd1460939a810ae10c84f9c4f-d515mo1.png");
+        bricks.push(new Sprite(tree, 728, 798, 200, 220, 200, 400));
 
         function logicFrame(){
             // update players position,
@@ -170,9 +182,11 @@
 
             dx = 0;
             if(keys.left.down){
+                player.turned = true;
                 dx = -5;
             }
             if(keys.right.down){
+                player.turned = false;
                 dx = 5;
             }
             if(keys.space.down){
@@ -182,12 +196,66 @@
             }
 
 
-            if(player.y + dy >= 535){
+            /*if(player.y + dy >= 535){
                 if( dy > 0){
                     dy = 0;
                 }
             }else{
                 dy += .98;
+            }*/
+
+            dy += .98;
+
+            for(var i = 0; i<bricks.length; i++){
+                var brick = bricks[i];
+
+                var brickLeft = brick.x;
+                var brickRight = brick.x + brick.width2;
+                var brickTop = brick.y;
+                var brickBottom = brick.y + brick.height2;
+
+                var playerLeft = player.x + dx;
+                var playerRight = player.x + player.width2 + dx;
+                var playerTop = player.y + dy;
+                var playerBottom = player.y + player.height2 + dy;
+
+
+                var intersectHorizontal =
+                        (playerLeft >= brickLeft && playerLeft <= brickRight) || (playerLeft >= brickLeft && playerRight <= brickRight) ||
+                        (brickLeft >= playerLeft && brickLeft <= playerRight) || (brickRight >= playerLeft && brickRight <= playerRight)  ;
+
+                //hit the ground
+                if(playerBottom >= brickTop && playerBottom <= brickBottom && intersectHorizontal){
+                    if( dy > 0 ){
+                        dy = 0;
+                    }
+                }
+
+                //hit the ceiling
+                if(playerTop <= brickBottom && playerTop >= brickTop && intersectHorizontal){
+                    if( dy < 0 ){
+                        dy = 0.01;
+                    }
+                }
+
+                playerTop = player.y + dy;
+                playerBottom = player.y + player.height2 + dy;
+
+
+                var intersectVertical =
+                        (playerTop >= brickTop && playerTop <= brickBottom) || (playerBottom >= brickTop && playerBottom <= brickBottom) ||
+                        (brickTop >= playerTop && brickTop <= playerBottom) || (brickBottom >= playerTop && brickBottom <= playerBottom) ;
+
+
+                //hit a wall on the right
+                if(playerRight > brickLeft && playerRight < brickRight && intersectVertical){
+                    dx = 0;
+                }
+
+                //hit a wall on the left
+                if(playerLeft <= brickRight && playerLeft >= brickLeft && intersectVertical){
+                    dx = 0;
+                }
             }
 
             player.x+=dx;
