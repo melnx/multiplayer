@@ -178,6 +178,11 @@
             bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, 300));
         }
 
+        var metal = images.getImage("https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcT7K2wlkIKipOmQCjKa_vrlDooFliyFZwQJe-NmrVuFCCSDNs7K");
+        for(var i=10; i>-200; i--){
+            bricks.push(new Sprite(metal, 225, 225, 50, 50, i*50-600, Math.sin(i/20)*10*50 + 600 ));
+        }
+
         //random content
         for(var i=30; i<300; i++){
             if(Math.ceil(i/10) % 2 == 0) continue;
