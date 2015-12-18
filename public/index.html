@@ -159,6 +159,7 @@
 
         var camera = {x : 0, y:0, width:1024, height:768}
 
+        //background
         var tokyo = images.getImage("http://i.ytimg.com/vi/HBJ1WUA4ZOU/maxresdefault.jpg");
         var bg = new Sprite(tokyo, 1280, 720, 1600, 800, 0, 0);
 
@@ -180,7 +181,7 @@
 
         var metal = images.getImage("https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcT7K2wlkIKipOmQCjKa_vrlDooFliyFZwQJe-NmrVuFCCSDNs7K");
         for(var i=10; i>-200; i--){
-            bricks.push(new Sprite(metal, 225, 225, 50, 50, i*50-600, Math.sin(i/20)*10*50 + 600 ));
+            bricks.push(new Sprite(metal, 225, 225, 50, 50, i*50-600, Math.sin(i/20)*10*50 + 600 + (i * 20) ));
         }
 
         //random content
