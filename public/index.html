@@ -159,6 +159,9 @@
 
         var camera = {x : 0, y:0, width:1024, height:768}
 
+        var tokyo = images.getImage("http://i.ytimg.com/vi/HBJ1WUA4ZOU/maxresdefault.jpg");
+        var bg = new Sprite(tokyo, 1280, 720, 1600, 800, 0, 0);
+
         var mario = images.getImage("http://orig15.deviantart.net/a436/f/2012/101/1/c/mario_sprite_by_flamingdragon5000-d4vt57a.png");
         var players = [new Sprite(mario, 480, 640, 48, 64, 20, 300)];
 
@@ -327,6 +330,10 @@
             context.clearRect(0, 0, canvas.width, canvas.height);
 
             images.context = context;
+
+            context.globalAlpha = 0.5;
+            bg.draw(-camera.x / 10, -camera.y / 10);
+            context.globalAlpha = 1;
 
             players.forEach(function(p){
                 p.draw(p.x - camera.x, p.y - camera.y);
