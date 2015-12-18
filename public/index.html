@@ -332,7 +332,11 @@
             images.context = context;
 
             context.globalAlpha = 0.5;
-            bg.draw(-camera.x / 20, -camera.y / 20);
+            var scrollspeed = 20;
+            var xmul = Math.floor((camera.x/scrollspeed) / bg.width2);
+            var xmul2 = Math.floor((camera.x/scrollspeed) / bg.width2) + 1;
+            bg.draw(-camera.x / scrollspeed + (bg.width2 * xmul), -camera.y / scrollspeed - 50);
+            bg.draw(-camera.x / scrollspeed + (bg.width2 * xmul2), -camera.y / scrollspeed - 50);
             context.globalAlpha = 1;
 
             players.forEach(function(p){
