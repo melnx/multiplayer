@@ -153,96 +153,107 @@
             }
         };
 
-        var x = 0;
-        var dx = 0;
-        var dy = 0;
+        //var dx = 0;
+        //var dy = 0;
 
         var camera = {x : 0, y:0, width:1024, height:768}
-
-        //background
-        var tokyo = images.getImage("http://i.ytimg.com/vi/HBJ1WUA4ZOU/maxresdefault.jpg");
-        var bg = new Sprite(tokyo, 1280, 720, 1600, 800, 0, 0);
-
-        var mario = images.getImage("http://orig15.deviantart.net/a436/f/2012/101/1/c/mario_sprite_by_flamingdragon5000-d4vt57a.png");
-        var players = [new Sprite(mario, 480, 640, 48, 64, 20, 300)];
+        var scrollspeed = 20;
+        var jumpspeed = 25;
+        var walkspeed = 5;
+        var gravity = .98;
+        var padding = 500;
+        var padding2 = 300;
 
         var bricks = [];
+        var players = [];
+        var player = null;
+        var background = null;
 
-        //starting area
-        var brick = images.getImage("http://away3d.googlecode.com/svn/tags/2.4.2%20examples/Away3D/as/src/assets/brick.jpg");
-        for(var i=0; i<30; i++){
-            bricks.push(new Sprite(brick, 512, 512, 50, 50, i*50, 600));
+        function loadMap(){
+            //background
+            var tokyo = images.getImage("tokyo.jpg");//images.getImage("http://i.ytimg.com/vi/HBJ1WUA4ZOU/maxresdefault.jpg");
+            background = new Sprite(tokyo, 1280, 720, 1600, 800, 0, 0);
+
+            //starting area
+            var brick = images.getImage("brick.jpg");//images.getImage("http://away3d.googlecode.com/svn/tags/2.4.2%20examples/Away3D/as/src/assets/brick.jpg");
+            for(var i=0; i<30; i++){
+                bricks.push(new Sprite(brick, 512, 512, 50, 50, i*50, 600));
+            }
+
+            var plant = images.getImage("grass.jpeg");//images.getImage("https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTLPuu6eM4TvRkRYijqD60rgXRwQiqYkb-AV0yBGKeJdC40t8nDyw");
+            for(var i=12; i<30; i++){
+                bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, 300));
+            }
+
+            var metal = images.getImage("metal.jpeg");//images.getImage("https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcT7K2wlkIKipOmQCjKa_vrlDooFliyFZwQJe-NmrVuFCCSDNs7K");
+            for(var i=10; i>-200; i--){
+                bricks.push(new Sprite(metal, 225, 225, 50, 50, i*50-600, Math.sin(i/20)*10*50 + 600 + (i * 20) ));
+            }
+
+            //random content
+            for(var i=30; i<300; i++){
+                if(Math.ceil(i/10) % 2 == 0) continue;
+                bricks.push(new Sprite(brick, 512, 512, 50, 50, i*50, 600));
+            }
+            for(var i=30; i<300; i++){
+                if(Math.ceil(i/10) % 2 == 1) continue;
+                bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, 300));
+            }
+            for(var i=30; i<300; i++){
+                if(Math.ceil(i/5) % 2 == 0) continue;
+                bricks.push(new Sprite(brick, 512, 512, 50, 50, i*50, 0));
+            }
+            for(var i=30; i<300; i++){
+                if(Math.ceil(i/5) % 2 == 1) continue;
+                bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, -300));
+            }
+            for(var i=30; i<300; i++){
+                if(Math.ceil(i/2) % 2 == 0) continue;
+                bricks.push(new Sprite(brick, 512, 512, 50, 50, i*50, -600));
+            }
+            for(var i=30; i<300; i++){
+                if(Math.ceil(i/2) % 2 == 1) continue;
+                bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, -900));
+            }
+
+            var tree = images.getImage("tree.png"); //images.getImage("http://orig08.deviantart.net/e55b/f/2012/146/c/0/c0a5a29fd1460939a810ae10c84f9c4f-d515mo1.png");
+            bricks.push(new Sprite(tree, 728, 798, 200, 220, 200, 400));
         }
 
-        var plant = images.getImage("https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTLPuu6eM4TvRkRYijqD60rgXRwQiqYkb-AV0yBGKeJdC40t8nDyw");
-        for(var i=12; i<30; i++){
-            bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, 300));
+        function loadPlayers(){
+            mario = images.getImage("mario.png");//images.getImage("http://orig15.deviantart.net/a436/f/2012/101/1/c/mario_sprite_by_flamingdragon5000-d4vt57a.png");
+
+            players = [new Sprite(mario, 480, 640, 48, 64, 20, 300)];
+            player = players[0];
+            player.dx = 0;
+            player.dy = 0;
         }
 
-        var metal = images.getImage("https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcT7K2wlkIKipOmQCjKa_vrlDooFliyFZwQJe-NmrVuFCCSDNs7K");
-        for(var i=10; i>-200; i--){
-            bricks.push(new Sprite(metal, 225, 225, 50, 50, i*50-600, Math.sin(i/20)*10*50 + 600 + (i * 20) ));
-        }
-
-        //random content
-        for(var i=30; i<300; i++){
-            if(Math.ceil(i/10) % 2 == 0) continue;
-            bricks.push(new Sprite(brick, 512, 512, 50, 50, i*50, 600));
-        }
-        for(var i=30; i<300; i++){
-            if(Math.ceil(i/10) % 2 == 1) continue;
-            bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, 300));
-        }
-        for(var i=30; i<300; i++){
-            if(Math.ceil(i/5) % 2 == 0) continue;
-            bricks.push(new Sprite(brick, 512, 512, 50, 50, i*50, 0));
-        }
-        for(var i=30; i<300; i++){
-            if(Math.ceil(i/5) % 2 == 1) continue;
-            bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, -300));
-        }
-        for(var i=30; i<300; i++){
-            if(Math.ceil(i/2) % 2 == 0) continue;
-            bricks.push(new Sprite(brick, 512, 512, 50, 50, i*50, -600));
-        }
-        for(var i=30; i<300; i++){
-            if(Math.ceil(i/2) % 2 == 1) continue;
-            bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, -900));
-        }
-
-        var tree = images.getImage("http://orig08.deviantart.net/e55b/f/2012/146/c/0/c0a5a29fd1460939a810ae10c84f9c4f-d515mo1.png");
-        bricks.push(new Sprite(tree, 728, 798, 200, 220, 200, 400));
+        loadMap();
+        loadPlayers();
 
         function logicFrame(){
             // update players position,
             // listen for collisions etc
             var player = players[0];
+            var dx = player.dx = 0;
+            var dy = player.dy;
 
-            dx = 0;
             if(keys.left.down){
                 player.turned = true;
-                dx = -5;
+                dx = -walkspeed;
             }
             if(keys.right.down){
                 player.turned = false;
-                dx = 5;
+                dx = walkspeed;
             }
             if(keys.space.down){
                 if(dy == 0){
-                    dy = -25;
+                    dy = -jumpspeed;
                 }
             }
 
-
-            /*if(player.y + dy >= 535){
-                if( dy > 0){
-                    dy = 0;
-                }
-            }else{
-                dy += .98;
-            }*/
-
-            dy += .98;
+            dy += gravity;
 
             for(var i = 0; i<bricks.length; i++){
                 var brick = bricks[i];
@@ -278,7 +289,6 @@
                 playerTop = player.y + dy;
                 playerBottom = player.y + player.height2 + dy;
 
-
                 var intersectVertical =
                         (playerTop >= brickTop && playerTop <= brickBottom) || (playerBottom >= brickTop && playerBottom <= brickBottom) ||
                         (brickTop >= playerTop && brickTop <= playerBottom) || (brickBottom >= playerTop && brickBottom <= playerBottom) ;
@@ -294,9 +304,6 @@
                     dx = 0;
                 }
             }
-
-            var padding = 500;
-            var padding2 = 300;
 
             //scroll camera left
             if(player.x < camera.x + padding){
@@ -318,13 +325,35 @@
                 camera.y = player.y - camera.height + padding2;
             }
 
-
-
             player.x+=dx;
             player.y+=dy;
+            player.dx=dx;
+            player.dy=dy;
 
             // process the game logic at a target of 60fps
             setTimeout(logicFrame, 1000/60);
+        }
+
+        function drawBackground(){
+            var context = images.context;
+            context.globalAlpha = 0.5;
+            var xmul = Math.floor((camera.x/scrollspeed) / background.width2);
+            var xmul2 = Math.floor((camera.x/scrollspeed) / background.width2) + 1;
+            background.draw(-camera.x / scrollspeed + (background.width2 * xmul), -camera.y / scrollspeed - 50);
+            background.draw(-camera.x / scrollspeed + (background.width2 * xmul2), -camera.y / scrollspeed - 50);
+            context.globalAlpha = 1;
+        }
+
+        function drawPlayers(){
+            players.forEach(function(p){
+                p.draw(p.x - camera.x, p.y - camera.y);
+            });
+        }
+
+        function drawMap(){
+            bricks.forEach(function(b){
+                b.draw(b.x - camera.x, b.y - camera.y);
+            });
         }
 
         function drawFrame(){
@@ -332,25 +361,13 @@
             var canvas = document.getElementById('canvas'),
                 context = canvas.getContext('2d');
 
-
             context.clearRect(0, 0, canvas.width, canvas.height);
 
             images.context = context;
 
-            context.globalAlpha = 0.5;
-            var scrollspeed = 20;
-            var xmul = Math.floor((camera.x/scrollspeed) / bg.width2);
-            var xmul2 = Math.floor((camera.x/scrollspeed) / bg.width2) + 1;
-            bg.draw(-camera.x / scrollspeed + (bg.width2 * xmul), -camera.y / scrollspeed - 50);
-            bg.draw(-camera.x / scrollspeed + (bg.width2 * xmul2), -camera.y / scrollspeed - 50);
-            context.globalAlpha = 1;
-
-            players.forEach(function(p){
-                p.draw(p.x - camera.x, p.y - camera.y);
-            });
-            bricks.forEach(function(b){
-                b.draw(b.x - camera.x, b.y - camera.y);
-            });
+            drawBackground();
+            drawPlayers();
+            drawMap();
 
             window.requestAnimationFrame(drawFrame);
         }
