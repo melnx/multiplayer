@@ -153,9 +153,6 @@
             }
         };
 
-        //var dx = 0;
-        //var dy = 0;
-
         var camera = {x : 0, y:0, width:1024, height:768}
         var scrollspeed = 20;
         var jumpspeed = 25;
@@ -171,21 +168,21 @@
 
         function loadMap(){
             //background
-            var tokyo = images.getImage("tokyo.jpg");//images.getImage("http://i.ytimg.com/vi/HBJ1WUA4ZOU/maxresdefault.jpg");
+            var tokyo = images.getImage("tokyo.jpg");
             background = new Sprite(tokyo, 1280, 720, 1600, 800, 0, 0);
 
             //starting area
-            var brick = images.getImage("brick.jpg");//images.getImage("http://away3d.googlecode.com/svn/tags/2.4.2%20examples/Away3D/as/src/assets/brick.jpg");
+            var brick = images.getImage("brick.jpg");
             for(var i=0; i<30; i++){
                 bricks.push(new Sprite(brick, 512, 512, 50, 50, i*50, 600));
             }
 
-            var plant = images.getImage("grass.jpeg");//images.getImage("https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTLPuu6eM4TvRkRYijqD60rgXRwQiqYkb-AV0yBGKeJdC40t8nDyw");
+            var plant = images.getImage("grass.jpeg");
             for(var i=12; i<30; i++){
                 bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, 300));
             }
 
-            var metal = images.getImage("metal.jpeg");//images.getImage("https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcT7K2wlkIKipOmQCjKa_vrlDooFliyFZwQJe-NmrVuFCCSDNs7K");
+            var metal = images.getImage("metal.jpeg");
             for(var i=10; i>-200; i--){
                 bricks.push(new Sprite(metal, 225, 225, 50, 50, i*50-600, Math.sin(i/20)*10*50 + 600 + (i * 20) ));
             }
@@ -216,12 +213,12 @@
                 bricks.push(new Sprite(plant, 100, 100, 50, 50, i*50, -900));
             }
 
-            var tree = images.getImage("tree.png"); //images.getImage("http://orig08.deviantart.net/e55b/f/2012/146/c/0/c0a5a29fd1460939a810ae10c84f9c4f-d515mo1.png");
+            var tree = images.getImage("tree.png");
             bricks.push(new Sprite(tree, 728, 798, 200, 220, 200, 400));
         }
 
         function loadPlayers(){
-            mario = images.getImage("mario.png");//images.getImage("http://orig15.deviantart.net/a436/f/2012/101/1/c/mario_sprite_by_flamingdragon5000-d4vt57a.png");
+            mario = images.getImage("mario.png");
 
             players = [new Sprite(mario, 480, 640, 48, 64, 20, 300)];
             player = players[0];
