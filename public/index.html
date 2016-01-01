@@ -5,8 +5,11 @@
 <body style="background-color: black;">
     <canvas id="canvas" width="1024" height="768"></canvas>
 
-
+    <script src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>
     <script>
+
+        var userid = null;
+        var copycat_mode = false;
 
         //keyboard stuff
         function Key(code){
@@ -153,16 +156,13 @@
             }
         };
 
-        var camera = {x : 0, y:0, width:1024, height:768}
+        var camera = {x : 0, y:0, width:1024, height:768, padding: 500, padding2: 300}
         var scrollspeed = 20;
-        var jumpspeed = 25;
-        var walkspeed = 5;
         var gravity = .98;
-        var padding = 500;
-        var padding2 = 300;
 
         var bricks = [];
         var players = [];
+        var network_players = {};
         var player = null;
         var background = null;
 
@@ -218,12 +218,23 @@
         }
 
         function loadPlayers(){
-            mario = images.getImage("mario.png");
-
-            players = [new Sprite(mario, 480, 640, 48, 64, 20, 300)];
-            player = players[0];
+            var mario = images.getImage("mario.png");
+            player = new Sprite(mario, 480, 640, 48, 64, 20, 300);
             player.dx = 0;
             player.dy = 0;
+            player.walkspeed = 5;
+            player.jumpspeed = 25;
+            player.history = [];
+
+            players = [player];
+
+            if(copycat_mode){
+                var luigi = images.getImage("mario.png");
+                var player2 = new Sprite(luigi, 480, 640, 48, 64, 20, 300);
+                players.push(player2);
+            }
+
+
         }
 
         loadMap();
@@ -235,6 +246,8 @@
             var player = players[0];
             var dx = player.dx = 0;
             var dy = player.dy;
+            var walkspeed = player.walkspeed;
+            var jumpspeed = player.jumpspeed;
 
             if(keys.left.down){
                 player.turned = true;
@@ -303,29 +316,43 @@
             }
 
             //scroll camera left
-            if(player.x < camera.x + padding){
-                camera.x = player.x - padding;
+            if(player.x < camera.x + camera.padding){
+                camera.x = player.x - camera.padding;
             }
 
             //scroll camera right
-            if(player.x > camera.x + camera.width - padding){
-                camera.x = player.x - camera.width + padding;
+            if(player.x > camera.x + camera.width - camera.padding){
+                camera.x = player.x - camera.width + camera.padding;
             }
 
             //scroll camera up
-            if(player.y < camera.y + padding2){
-                camera.y = player.y - padding2;
+            if(player.y < camera.y + camera.padding2){
+                camera.y = player.y - camera.padding2;
             }
 
             //scroll camera down
-            if(player.y > camera.y + camera.height - padding2){
-                camera.y = player.y - camera.height + padding2;
+            if(player.y > camera.y + camera.height - camera.padding2){
+                camera.y = player.y - camera.height + camera.padding2;
             }
 
             player.x+=dx;
             player.y+=dy;
             player.dx=dx;
             player.dy=dy;
+
+            player.history.push({x: player.x, y:player.y});
+
+
+            if(copycat_mode){
+                //player2
+                var player2 = players[1];
+                var cloneDelay = 100;
+                if(player.history.length > cloneDelay){
+                    var targetState = player.history[player.history.length - cloneDelay];
+                    player2.x = targetState.x;
+                    player2.y = targetState.y;
+                }
+            }
 
             // process the game logic at a target of 60fps
             setTimeout(logicFrame, 1000/60);
@@ -342,6 +369,11 @@
         }
 
         function drawPlayers(){
+            Object.keys(network_players).forEach(function(k){
+                var p = network_players[k];
+                p.draw(p.x - camera.x, p.y - camera.y);
+            });
+
             players.forEach(function(p){
                 p.draw(p.x - camera.x, p.y - camera.y);
             });
@@ -354,7 +386,6 @@
         }
 
         function drawFrame(){
-            // kick ass circles and squares
             var canvas = document.getElementById('canvas'),
                 context = canvas.getContext('2d');
 
@@ -370,8 +401,92 @@
         }
 
         drawFrame();
-        logicFrame()
+        logicFrame();
+
+        function connect(endpoint){
+            var sock = socks[endpoint];
+
+            if(!sock){
+                socks[endpoint] = sock = new SockJS(endpoint);
+            }
+
+            sock.onmessage = function(e) {
+                if(e.type == "message"){
+                    var parsed = JSON.parse(e.data);
+                    for(key in parsed){
+                        e[key] = parsed[key];
+                    }
+                    delete e.data;
+                    delete e.type;
+
+                    //console.log(e);
+
+                    if(e.message){
+                        var child = document.createElement('div');
+                        child.innerHTML = e._user + ": " + e.message;
+                        document.getElementById('chatlog').appendChild(child);
+                    }else if(e.youruserid){
+                        userid = e.youruserid;
+                        console.log("Your user Id: " + userid);
+                    }else if(e._user){
+                        if(e.x && e.y){
+                            if(userid && e._user != userid){
+                                var player2 = network_players[e._user];
+                                if(!player2){
+                                    var wario = images.getImage("wario.png");
+                                    player2 = new Sprite(wario, 480, 640, 48, 64, e.x, e.y);
+                                    player2.user_id = e._user;
+                                    network_players[e._user]= player2;
+                                    console.log("NEW NETWORK PLAYER: " + e._user);
+                                }else{
+                                    player2.x = e.x;
+                                    player2.y = e.y;
+                                }
+                            }
+                        }else if(e.disconnect){
+                            console.log('DISCONNECTED NETWORK PLAYER: ' + e._user);
+                            delete network_players[e._user];
+                        }
+                    }
+
+                    e.__qt = 1;
+                }else{
+                    alert("unknown message type");
+                }
+            };
+
+        }
+
+        var socks = {};
+
+        function networkFrame(){
+            var sock = socks['/activity'];
+
+            var message = { x:player.x, y:player.y };
+            sock.send(JSON.stringify(message));
+
+            setTimeout(networkFrame, 1000/20);
+        }
+
+        connect("/activity");
+        setTimeout(networkFrame, 5000);
+
+        function sendMessage(){
+            var sock = socks['/activity']
+            var elem = document.getElementById('chatinput');
+            var message = { message: elem.value };
+            elem.value = "";
+            sock.send(JSON.stringify(message));
+        }
     </script>
+
+    <div style="float:right;">
+        <div id="chatlog" style="color:white"></div>
+        <textarea id="chatinput" tabindex="2">
+
+        </textarea><br />
+        <button onclick="sendMessage()">Send</button>
+    </div>
 </body>
 
 </html>
