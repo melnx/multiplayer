@@ -344,6 +344,11 @@
 
             player.history.push({x: player.x, y:player.y});
 
+            Object.keys(network_players).forEach(function(k){
+                var p = network_players[k];
+                p.x += p.dx;
+                p.y += p.dy;
+            });
 
             if(copycat_mode){
                 //player2
@@ -440,10 +445,12 @@
                                     player2.user_id = e._user;
                                     network_players[e._user]= player2;
                                     console.log("NEW NETWORK PLAYER: " + e._user);
-                                }else{
-                                    player2.x = e.x;
-                                    player2.y = e.y;
                                 }
+
+                                player2.x = e.x;
+                                player2.y = e.y;
+                                player2.dx = e.dx;
+                                player2.dy = e.dy;
                             }
                         }else if(e.disconnect){
                             console.log('DISCONNECTED NETWORK PLAYER: ' + e._user);
@@ -464,7 +471,7 @@
         function networkFrame(){
             var sock = socks['/activity'];
 
-            var message = { x:player.x, y:player.y };
+            var message = { x:player.x, y:player.y, dx:player.dx, dy:player.dy };
             sock.send(JSON.stringify(message));
 
             setTimeout(networkFrame, 1000/20);
