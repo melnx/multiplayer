@@ -12,6 +12,8 @@
 
         var userid = null;
         var copycat_mode = false;
+        var default_walk_speed = 5;
+        var default_jump_speed = 25;
 
         //keyboard stuff
         function Key(code){
@@ -224,8 +226,8 @@
             player = new Sprite(mario, 480, 640, 48, 64, 20, 300);
             player.dx = 0;
             player.dy = 0;
-            player.walkspeed = 5;
-            player.jumpspeed = 25;
+            player.walkspeed = default_walk_speed;
+            player.jumpspeed = default_jump_speed;
             player.history = [];
 
             players = [player];
@@ -242,26 +244,25 @@
         loadMap();
         loadPlayers();
 
-        function logicFrame(){
-            // update players position,
-            // listen for collisions etc
-            var player = players[0];
-            var dx = player.dx = 0;
+        function runPhysics(player, processKeys){
+            var dx = player.dx = processKeys ? 0 : player.dx;
             var dy = player.dy;
             var walkspeed = player.walkspeed;
             var jumpspeed = player.jumpspeed;
 
-            if(keys.left.down){
-                player.turned = true;
-                dx = -walkspeed;
-            }
-            if(keys.right.down){
-                player.turned = false;
-                dx = walkspeed;
-            }
-            if(keys.space.down){
-                if(dy == 0){
-                    dy = -jumpspeed;
+            if(processKeys){
+                if(keys.left.down){
+                    player.turned = true;
+                    dx = -walkspeed;
+                }
+                if(keys.right.down){
+                    player.turned = false;
+                    dx = walkspeed;
+                }
+                if(keys.space.down){
+                    if(dy == 0){
+                        dy = -jumpspeed;
+                    }
                 }
             }
 
@@ -282,7 +283,7 @@
 
                 var intersectHorizontal =
                         (playerLeft >= brickLeft && playerLeft <= brickRight) || (playerLeft >= brickLeft && playerRight <= brickRight) ||
-                        (brickLeft >= playerLeft && brickLeft <= playerRight) || (brickRight >= playerLeft && brickRight <= playerRight)  ;
+                                (brickLeft >= playerLeft && brickLeft <= playerRight) || (brickRight >= playerLeft && brickRight <= playerRight)  ;
 
                 //hit the ground
                 if(playerBottom >= brickTop && playerBottom <= brickBottom && intersectHorizontal){
@@ -303,7 +304,7 @@
 
                 var intersectVertical =
                         (playerTop >= brickTop && playerTop <= brickBottom) || (playerBottom >= brickTop && playerBottom <= brickBottom) ||
-                        (brickTop >= playerTop && brickTop <= playerBottom) || (brickBottom >= playerTop && brickBottom <= playerBottom) ;
+                                (brickTop >= playerTop && brickTop <= playerBottom) || (brickBottom >= playerTop && brickBottom <= playerBottom) ;
 
 
                 //hit a wall on the right
@@ -317,6 +318,13 @@
                 }
             }
 
+            player.x+=dx;
+            player.y+=dy;
+            player.dx=dx;
+            player.dy=dy;
+        }
+
+        function scrollCamera(player){
             //scroll camera left
             if(player.x < camera.x + camera.padding){
                 camera.x = player.x - camera.padding;
@@ -336,18 +344,23 @@
             if(player.y > camera.y + camera.height - camera.padding2){
                 camera.y = player.y - camera.height + camera.padding2;
             }
+        }
 
-            player.x+=dx;
-            player.y+=dy;
-            player.dx=dx;
-            player.dy=dy;
+        function logicFrame(){
+            // update players position,
+            // listen for collisions etc
+            var player = players[0];
+
+            runPhysics(player, true);
+            scrollCamera(player);
 
             player.history.push({x: player.x, y:player.y});
 
             Object.keys(network_players).forEach(function(k){
                 var p = network_players[k];
-                p.x += p.dx;
-                p.y += p.dy;
+                //p.x += p.dx;
+                //p.y += p.dy;
+                runPhysics(p);
             });
 
             if(copycat_mode){
@@ -443,6 +456,8 @@
                                     var wario = images.getImage("wario.png");
                                     player2 = new Sprite(wario, 480, 640, 48, 64, e.x, e.y);
                                     player2.user_id = e._user;
+                                    player2.walkspeed = default_walk_speed;
+                                    player2.jumpspeed = default_jump_speed;
                                     network_players[e._user]= player2;
                                     console.log("NEW NETWORK PLAYER: " + e._user);
                                 }
